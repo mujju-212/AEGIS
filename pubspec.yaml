@@ -39,6 +39,10 @@ dependencies:
   path_provider: ^2.1.5
   permission_handler: ^11.4.0
   shared_preferences: ^2.3.5
+  device_info_plus: ^10.1.1
+  disk_space: ^1.0.2
+  dio: ^5.7.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

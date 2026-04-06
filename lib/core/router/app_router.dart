@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:privacy_ai/features/onboarding/presentation/screens/welcome_screen.dart';
 import 'package:privacy_ai/features/onboarding/presentation/screens/device_scan_screen.dart';
 import 'package:privacy_ai/features/onboarding/presentation/screens/model_selection_screen.dart';
+import 'package:privacy_ai/features/onboarding/presentation/screens/model_download_screen.dart';
 import 'package:privacy_ai/features/onboarding/presentation/screens/setup_questions_screen.dart';
 import 'package:privacy_ai/features/onboarding/presentation/screens/permission_setup_screen.dart';
 import 'package:privacy_ai/features/onboarding/presentation/screens/onboarding_complete_screen.dart';
@@ -13,6 +14,7 @@ import 'package:privacy_ai/features/agents/presentation/screens/agents_screen.da
 import 'package:privacy_ai/features/transparency/presentation/screens/transparency_screen.dart';
 import 'package:privacy_ai/features/settings/presentation/screens/settings_screen.dart';
 import 'package:privacy_ai/features/rigorous_mode/presentation/screens/rigorous_mode_screen.dart';
+import 'package:privacy_ai/features/memory/presentation/screens/memory_screen.dart';
 import 'package:privacy_ai/core/router/app_shell.dart';
 
 class AppRouter {
@@ -37,6 +39,10 @@ class AppRouter {
       GoRoute(
         path: '/model-selection',
         builder: (context, state) => const ModelSelectionScreen(),
+      ),
+      GoRoute(
+        path: '/model-download',
+        builder: (context, state) => const ModelDownloadScreen(),
       ),
       GoRoute(
         path: '/setup-questions',
@@ -99,6 +105,10 @@ class AppRouter {
       GoRoute(
         path: '/rigorous-mode',
         builder: (context, state) => const RigorousModeScreen(),
+      ),
+      GoRoute(
+        path: '/memory',
+        builder: (context, state) => const MemoryScreen(),
       ),
     ],
   );

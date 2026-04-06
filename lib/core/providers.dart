@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:privacy_ai/core/services/encryption/encryption_service.dart';
 import 'package:privacy_ai/core/services/database/database_service.dart';
+import 'package:privacy_ai/core/constants/settings_keys.dart';
 
 /// Global encryption service provider.
 final encryptionServiceProvider = Provider<EncryptionService>((ref) {
@@ -17,7 +18,7 @@ final databaseServiceProvider = Provider<DatabaseService>((ref) {
 final isOnboardingCompleteProvider = StateProvider<bool>((ref) {
   final db = ref.watch(databaseServiceProvider);
   if (!db.isInitialized) return false;
-  return db.readSetting<bool>('onboarding_complete') ?? false;
+  return db.readSetting<bool>(SettingsKeys.onboardingComplete) ?? false;
 });
 
 /// Current bottom nav index.

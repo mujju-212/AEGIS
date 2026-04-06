@@ -1,49 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:privacy_ai/core/constants/settings_keys.dart';
+import 'package:privacy_ai/core/providers.dart';
+import 'package:privacy_ai/core/services/model/model_registry.dart';
 import 'package:privacy_ai/core/theme/app_colors.dart';
 
-class ModelSelectionScreen extends StatefulWidget {
+class ModelSelectionScreen extends ConsumerStatefulWidget {
   const ModelSelectionScreen({super.key});
 
   @override
   State<ModelSelectionScreen> createState() => _ModelSelectionScreenState();
 }
 
-class _ModelSelectionScreenState extends State<ModelSelectionScreen> {
+class _ModelSelectionScreenState extends ConsumerState<ModelSelectionScreen> {
   int _selectedIndex = 0;
-
-  final List<_ModelOption> _models = [
-    _ModelOption(
-      name: 'TinyLlama 1.1B',
-      description: 'Fastest, lowest resource usage. Great for most devices.',
-      size: '~637 MB',
-      ram: '~1.5 GB',
-      speed: 'Very Fast',
-      badge: 'Recommended',
-      badgeColor: AppColors.positive,
-    ),
-    _ModelOption(
-      name: 'Phi-2 2.7B',
-      description: 'Smarter reasoning, still lightweight. Needs 4+ GB RAM.',
-      size: '~1.6 GB',
-      ram: '~3.0 GB',
-      speed: 'Fast',
-      badge: 'Balanced',
-      badgeColor: AppColors.primary,
-    ),
-    _ModelOption(
-      name: 'Gemma 2B',
-      description: 'Google\'s compact model. Good quality, moderate resources.',
-      size: '~1.4 GB',
-      ram: '~2.5 GB',
-      speed: 'Fast',
-      badge: null,
-      badgeColor: null,
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
+    final db = ref.read(databaseServiceProvider);
+    final tierName = db.readSetting<String>(SettingsKeys.deviceTier) ?? DeviceTier.mid.name;
+    final tier = DeviceTier.values.firstWhere(
+      (t) => t.name == tierName,
+      orElse: () => DeviceTier.mid,
+    );
+    final models = ModelRegistry.forTier(tier);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Choose AI Model'),
@@ -71,9 +53,9 @@ class _ModelSelectionScreenState extends State<ModelSelectionScreen> {
             const SizedBox(height: 24),
             Expanded(
               child: ListView.builder(
-                itemCount: _models.length,
+                itemCount: models.length,
                 itemBuilder: (context, index) {
-                  final model = _models[index];
+                  final model = models[index];
                   final isSelected = index == _selectedIndex;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -114,13 +96,13 @@ class _ModelSelectionScreenState extends State<ModelSelectionScreen> {
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: model.badgeColor!.withValues(alpha: 0.15),
+                                      color: _badgeColor(model.badge).withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
                                       model.badge!,
                                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                        color: model.badgeColor,
+                                          color: _badgeColor(model.badge),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -192,8 +174,13 @@ class _ModelSelectionScreenState extends State<ModelSelectionScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => context.go('/setup-questions'),
-                child: Text('Download ${_models[_selectedIndex].name}'),
+                onPressed: () async {
+                  final selected = models[_selectedIndex];
+                  await db.saveSetting(SettingsKeys.selectedModelId, selected.id);
+                  await db.saveSetting(SettingsKeys.modelReady, false);
+                  context.go('/model-download');
+                },
+                child: Text('Download ${models[_selectedIndex].name}'),
               ),
             ),
             const SizedBox(height: 16),
@@ -223,24 +210,17 @@ class _ModelSelectionScreenState extends State<ModelSelectionScreen> {
       ],
     );
   }
-}
 
-class _ModelOption {
-  final String name;
-  final String description;
-  final String size;
-  final String ram;
-  final String speed;
-  final String? badge;
-  final Color? badgeColor;
-
-  const _ModelOption({
-    required this.name,
-    required this.description,
-    required this.size,
-    required this.ram,
-    required this.speed,
-    this.badge,
-    this.badgeColor,
-  });
+  Color _badgeColor(String? badge) {
+    switch (badge) {
+      case 'Recommended':
+        return AppColors.positive;
+      case 'Smartest':
+        return AppColors.primary;
+      case 'Fastest':
+        return AppColors.warning;
+      default:
+        return AppColors.textMuted;
+    }
+  }
 }

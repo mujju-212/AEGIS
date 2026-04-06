@@ -1,16 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:privacy_ai/core/constants/settings_keys.dart';
+import 'package:privacy_ai/core/providers.dart';
+import 'package:privacy_ai/core/services/device/device_capability_service.dart';
+import 'package:privacy_ai/core/services/model/model_registry.dart';
 import 'package:privacy_ai/core/theme/app_colors.dart';
 
-class DeviceScanScreen extends StatefulWidget {
+class DeviceScanScreen extends ConsumerStatefulWidget {
   const DeviceScanScreen({super.key});
 
   @override
-  State<DeviceScanScreen> createState() => _DeviceScanScreenState();
+  ConsumerState<DeviceScanScreen> createState() => _DeviceScanScreenState();
 }
 
-class _DeviceScanScreenState extends State<DeviceScanScreen>
+class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
     with TickerProviderStateMixin {
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
@@ -19,15 +24,15 @@ class _DeviceScanScreenState extends State<DeviceScanScreen>
     _ScanStep('Checking available RAM', Icons.memory_rounded),
     _ScanStep('Measuring storage space', Icons.storage_rounded),
     _ScanStep('Detecting processor capabilities', Icons.developer_board_rounded),
-    _ScanStep('Evaluating battery health', Icons.battery_charging_full_rounded),
+    _ScanStep('Identifying device profile', Icons.smartphone_rounded),
     _ScanStep('Determining optimal model size', Icons.psychology_rounded),
   ];
 
   int _currentStep = 0;
   bool _scanComplete = false;
 
-  // Simulated device info
   final Map<String, String> _deviceInfo = {};
+  String _recommended = '';
 
   @override
   void initState() {
@@ -50,18 +55,22 @@ class _DeviceScanScreenState extends State<DeviceScanScreen>
 
   Future<void> _startScan() async {
     _progressController.forward();
-    // Simulate device detection
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() => _deviceInfo['RAM'] = '6 GB');
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _deviceInfo['Storage'] = '12.4 GB free');
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _deviceInfo['CPU'] = 'ARM v8 (8 cores)');
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _deviceInfo['Battery'] = '87% health');
-    await Future.delayed(const Duration(seconds: 1));
+    final capability = await DeviceCapabilityService().detect();
+    final models = ModelRegistry.forTier(capability.tier);
+    final recommended = models.first;
+
+    final db = ref.read(databaseServiceProvider);
+    await db.saveSetting(SettingsKeys.deviceRamGb, capability.ramGb);
+    await db.saveSetting(SettingsKeys.deviceFreeGb, capability.freeGb);
+    await db.saveSetting(SettingsKeys.deviceTier, capability.tier.name);
+
     setState(() {
-      _deviceInfo['Recommended'] = 'TinyLlama 1.1B';
+      _recommended = recommended.name;
+      _deviceInfo['RAM'] = '${capability.ramGb} GB';
+      _deviceInfo['Storage'] = '${capability.freeGb} GB free';
+      _deviceInfo['CPU'] = capability.isArm64 ? 'ARM64 (NEON)' : 'Non-ARM64';
+      _deviceInfo['Device'] = '${capability.brand} ${capability.model}';
+      _deviceInfo['Recommended'] = _recommended;
       _scanComplete = true;
     });
   }
@@ -222,7 +231,7 @@ class _DeviceScanScreenState extends State<DeviceScanScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Recommended: TinyLlama 1.1B',
+                      'Recommended: $_recommended',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                       ),

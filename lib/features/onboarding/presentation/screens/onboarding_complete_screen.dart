@@ -3,12 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:privacy_ai/core/theme/app_colors.dart';
 import 'package:privacy_ai/core/providers.dart';
+import 'package:privacy_ai/core/constants/settings_keys.dart';
+import 'package:privacy_ai/core/services/model/model_registry.dart';
 
 class OnboardingCompleteScreen extends ConsumerWidget {
   const OnboardingCompleteScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final db = ref.read(databaseServiceProvider);
+    final modelId = db.readSetting<String>(SettingsKeys.selectedModelId);
+    final model = modelId != null ? ModelRegistry.byId(modelId) : null;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -55,7 +61,9 @@ class OnboardingCompleteScreen extends ConsumerWidget {
                 context,
                 Icons.psychology_rounded,
                 'AI Model',
-                'TinyLlama 1.1B — running on your device',
+                model != null
+                    ? '${model.name} — running on your device'
+                    : 'Local model — running on your device',
               ),
               const SizedBox(height: 12),
               _buildSummaryItem(
@@ -76,6 +84,7 @@ class OnboardingCompleteScreen extends ConsumerWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
+                    db.saveSetting(SettingsKeys.onboardingComplete, true);
                     ref.read(isOnboardingCompleteProvider.notifier).state = true;
                     context.go('/home');
                   },

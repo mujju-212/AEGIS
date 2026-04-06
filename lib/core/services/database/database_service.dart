@@ -15,6 +15,7 @@ class DatabaseService {
   Box? _patternsBox;
   Box? _settingsBox;
   Box? _eventsBox;
+  Box? _memoryBox;
 
   bool _initialized = false;
 
@@ -33,6 +34,7 @@ class DatabaseService {
     _patternsBox = await Hive.openBox(AppConstants.patternsBoxName);
     _settingsBox = await Hive.openBox(AppConstants.settingsBoxName);
     _eventsBox = await Hive.openBox(AppConstants.eventsBoxName);
+    _memoryBox = await Hive.openBox(AppConstants.memoryBoxName);
 
     _initialized = true;
   }
@@ -102,6 +104,28 @@ class DatabaseService {
     return _settingsBox!.get(key) as T?;
   }
 
+  // ─── Memory (encrypted, handled by MemoryRepository) ────
+
+  Future<void> saveMemory(String key, String encryptedValue) async {
+    _ensureInitialized();
+    await _memoryBox!.put(key, encryptedValue);
+  }
+
+  String? readMemory(String key) {
+    _ensureInitialized();
+    return _memoryBox!.get(key) as String?;
+  }
+
+  List<String> getAllMemoryKeys() {
+    _ensureInitialized();
+    return _memoryBox!.keys.cast<String>().toList();
+  }
+
+  Future<void> deleteMemory(String key) async {
+    _ensureInitialized();
+    await _memoryBox!.delete(key);
+  }
+
   // ─── Deletion Controls (5 levels as per doc) ───────────
 
   /// Level 1: Delete single pattern.
@@ -157,6 +181,7 @@ class DatabaseService {
     await _patternsBox!.clear();
     await _settingsBox!.clear();
     await _mainBox!.clear();
+    await _memoryBox!.clear();
   }
 
   /// Get storage stats for transparency dashboard.
@@ -166,6 +191,7 @@ class DatabaseService {
       'totalEvents': _eventsBox!.length,
       'totalPatterns': _patternsBox!.length,
       'totalSettings': _settingsBox!.length,
+      'totalMemories': _memoryBox!.length,
     };
   }
 
@@ -180,6 +206,7 @@ class DatabaseService {
     await _patternsBox?.close();
     await _settingsBox?.close();
     await _eventsBox?.close();
+    await _memoryBox?.close();
     _initialized = false;
   }
 }

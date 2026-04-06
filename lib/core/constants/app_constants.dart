@@ -11,11 +11,14 @@ class AppConstants {
   static const String patternsBoxName = 'privacy_ai_patterns';
   static const String settingsBoxName = 'privacy_ai_settings';
   static const String eventsBoxName = 'privacy_ai_events';
+  static const String memoryBoxName = 'privacy_ai_memory';
 
   // Data Limits (from planning doc)
   static const int maxRawEvents = 10000;
   static const int maxDataRetentionDays = 90;
   static const int timestampQuantisationMinutes = 15;
+  static const int maxMemories = 200;
+  static const int maxConversationSummaries = 50;
 
   // ML Thresholds
   static const double suggestionMinConfidence = 0.60;
